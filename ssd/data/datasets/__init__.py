@@ -14,6 +14,7 @@ def build_dataset(dataset_list, transform=None, target_transform=None, is_test=F
     assert len(dataset_list) > 0
     datasets = []
     for dataset_name in dataset_list:
+        if dataset_name=='voc_2012_trainval':continue
         data = DatasetCatalog.get(dataset_name)
         args = data['args']
         factory = _DATASETS[data['factory']]

@@ -10,6 +10,7 @@ from ssd.modeling.predictor import Predictor
 from ssd.modeling.ssd import SSD
 
 from ssd.utils import distributed_util
+from ssd.modeling.data_preprocessing import PredictionTransform
 
 
 def _accumulate_predictions_from_multiple_gpus(predictions_per_gpu):
@@ -33,7 +34,7 @@ def _accumulate_predictions_from_multiple_gpus(predictions_per_gpu):
     predictions = [predictions[i] for i in image_ids]
     return predictions
 
-
+import numpy 
 def _evaluation(cfg, dataset_name, test_dataset, predictor, distributed, output_dir):
     """ Perform evaluating on one dataset
     Args:
@@ -59,7 +60,13 @@ def _evaluation(cfg, dataset_name, test_dataset, predictor, distributed, output_
     predictions = {}
     for i in progress_bar(indices):
         image = test_dataset.get_image(i)
+        #print(type(image))
+        
+        #image=numpy(image)
+        #transform=PredictionTransform(cfg.INPUT.IMAGE_SIZE, cfg.INPUT.PIXEL_MEAN)
+        #image=transform(image)
         output = predictor.predict(image)
+        print('output')
         boxes, labels, scores = [o.to(cpu_device).numpy() for o in output]
         predictions[i] = (boxes, labels, scores)
     distributed_util.synchronize()
@@ -75,12 +82,14 @@ def _evaluation(cfg, dataset_name, test_dataset, predictor, distributed, output_
 
 
 def do_evaluation(cfg, model, output_dir, distributed):
+
     if isinstance(model, torch.nn.parallel.DistributedDataParallel):
         model = model.module
     assert isinstance(model, SSD), 'Wrong module.'
-    test_datasets = build_dataset(dataset_list=cfg.DATASETS.TEST, is_test=True)
+    test_datasets = build_dataset(dataset_list=cfg.DATASETS.TEST,is_test=True)
     device = torch.device(cfg.MODEL.DEVICE)
     model.eval()
+
     predictor = Predictor(cfg=cfg,
                           model=model,
                           iou_threshold=cfg.TEST.NMS_THRESHOLD,
@@ -89,6 +98,7 @@ def do_evaluation(cfg, model, output_dir, distributed):
     # evaluate all test datasets.
     logger = logging.getLogger("SSD.inference")
     logger.info('Will evaluate {} dataset(s):'.format(len(test_datasets)))
+
     for dataset_name, test_dataset in zip(cfg.DATASETS.TEST, test_datasets):
         _evaluation(cfg, dataset_name, test_dataset, predictor, distributed, output_dir)
         distributed_util.synchronize()

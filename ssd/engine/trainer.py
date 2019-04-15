@@ -52,6 +52,7 @@ def do_train(cfg, model,
     logger = logging.getLogger("SSD.trainer")
     logger.info("Start training")
     model.train()
+
     save_to_disk = distributed_util.get_rank() == 0
     if args.use_tensorboard and save_to_disk:
         import tensorboardX
@@ -71,7 +72,10 @@ def do_train(cfg, model,
         images = images.to(device)
         boxes = boxes.to(device)
         labels = labels.to(device)
-
+        
+        #print(images.shape)
+        #print(labels.shape)
+        #print(boxes.shape)
         optimizer.zero_grad()
         loss_dict = model(images, targets=(boxes, labels))
 

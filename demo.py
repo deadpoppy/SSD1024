@@ -53,16 +53,16 @@ def main():
     parser = argparse.ArgumentParser(description="SSD Demo.")
     parser.add_argument(
         "--config-file",
-        default="",
+        default="configs/ssd512_voc0712.yaml",
         metavar="FILE",
         help="path to config file",
         type=str,
     )
-    parser.add_argument("--weights", type=str, help="Trained weights.")
-    parser.add_argument("--iou_threshold", type=float, default=0.5)
-    parser.add_argument("--score_threshold", type=float, default=0.5)
-    parser.add_argument("--images_dir", default='demo', type=str, help='Specify a image dir to do prediction.')
-    parser.add_argument("--output_dir", default='demo/result', type=str, help='Specify a image dir to save predicted images.')
+    parser.add_argument("--weights", type=str, default='./output/ssd1024_vgg_iteration_045000.pth', help="Trained weights.")
+    parser.add_argument("--iou_threshold", type=float, default=0.05)
+    parser.add_argument("--score_threshold", type=float, default=0.05)
+    parser.add_argument("--images_dir", default='/root/newtest', type=str, help='Specify a image dir to do prediction.')
+    parser.add_argument("--output_dir", default='demo/test', type=str, help='Specify a image dir to save predicted images.')
     parser.add_argument("--dataset_type", default="voc", type=str, help='Specify dataset type. Currently support voc and coco.')
 
     parser.add_argument(

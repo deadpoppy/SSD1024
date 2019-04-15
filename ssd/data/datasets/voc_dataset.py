@@ -7,11 +7,7 @@ from PIL import Image
 
 class VOCDataset(torch.utils.data.Dataset):
     class_names = ('__background__',
-                   'aeroplane', 'bicycle', 'bird', 'boat',
-                   'bottle', 'bus', 'car', 'cat', 'chair',
-                   'cow', 'diningtable', 'dog', 'horse',
-                   'motorbike', 'person', 'pottedplant',
-                   'sheep', 'sofa', 'train', 'tvmonitor')
+                   'crack', '1', '2')
 
     def __init__(self, data_dir, split, transform=None, target_transform=None, keep_difficult=False):
         """Dataset for VOC data.
@@ -24,6 +20,7 @@ class VOCDataset(torch.utils.data.Dataset):
         self.transform = transform
         self.target_transform = target_transform
         image_sets_file = os.path.join(self.data_dir, "ImageSets", "Main", "%s.txt" % self.split)
+        #print(image_sets_file)
         self.ids = VOCDataset._read_image_ids(image_sets_file)
         self.keep_difficult = keep_difficult
 
@@ -31,6 +28,7 @@ class VOCDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         image_id = self.ids[index]
+        #print(image_id)
         boxes, labels, is_difficult = self._get_annotation(image_id)
         if not self.keep_difficult:
             boxes = boxes[is_difficult == 0]
@@ -66,6 +64,7 @@ class VOCDataset(torch.utils.data.Dataset):
 
     def _get_annotation(self, image_id):
         annotation_file = os.path.join(self.data_dir, "Annotations", "%s.xml" % image_id)
+        #print(annotation_file)
         objects = ET.parse(annotation_file).findall("object")
         boxes = []
         labels = []
@@ -82,6 +81,7 @@ class VOCDataset(torch.utils.data.Dataset):
             labels.append(self.class_dict[class_name])
             is_difficult_str = obj.find('difficult').text
             is_difficult.append(int(is_difficult_str) if is_difficult_str else 0)
+        
 
         return (np.array(boxes, dtype=np.float32),
                 np.array(labels, dtype=np.int64),
@@ -90,5 +90,6 @@ class VOCDataset(torch.utils.data.Dataset):
     def _read_image(self, image_id):
         image_file = os.path.join(self.data_dir, "JPEGImages", "%s.jpg" % image_id)
         image = Image.open(image_file).convert("RGB")
+        #print(image_file)
         image = np.array(image)
         return image

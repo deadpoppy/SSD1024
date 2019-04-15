@@ -20,7 +20,13 @@ from ssd.utils.logger import setup_logger
 from ssd.utils.lr_scheduler import WarmupMultiStepLR
 from ssd.utils.misc import str2bool
 
+def build_model(cfg, args):
 
+    # -----------------------------------------------------------------------------
+    # Model
+    # -----------------------------------------------------------------------------
+    model = build_ssd_model(cfg)
+    return model
 def train(cfg, args):
     logger = logging.getLogger('SSD.trainer')
     # -----------------------------------------------------------------------------
@@ -29,20 +35,21 @@ def train(cfg, args):
     model = build_ssd_model(cfg)
     device = torch.device(cfg.MODEL.DEVICE)
     model.to(device)
-    if args.resume:
+    #model=torch.nn.DataParallel(modle)
+    if not args.resume=='':
         logger.info("Resume from the model {}".format(args.resume))
         model.load(args.resume)
     else:
-        logger.info("Init from base net {}".format(args.vgg))
-        model.init_from_base_net(args.vgg)
+        print('pass now************************')
+        pass
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank], output_device=args.local_rank)
     # -----------------------------------------------------------------------------
     # Optimizer
     # -----------------------------------------------------------------------------
     lr = cfg.SOLVER.LR * args.num_gpus  # scale by num gpus
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=cfg.SOLVER.MOMENTUM, weight_decay=cfg.SOLVER.WEIGHT_DECAY)
-
+    #optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=cfg.SOLVER.MOMENTUM, weight_decay=cfg.SOLVER.WEIGHT_DECAY)
+    optimizer=torch.optim.Adam(model.parameters(),lr=lr)
     # -----------------------------------------------------------------------------
     # Scheduler
     # -----------------------------------------------------------------------------
@@ -75,18 +82,18 @@ def main():
     parser = argparse.ArgumentParser(description='Single Shot MultiBox Detector Training With PyTorch')
     parser.add_argument(
         "--config-file",
-        default="",
+        default="configs/ssd512_voc0712.yaml",
         metavar="FILE",
         help="path to config file",
         type=str,
     )
     parser.add_argument("--local_rank", type=int, default=0)
-    parser.add_argument('--vgg', help='Pre-trained vgg model path, download from https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth')
-    parser.add_argument('--resume', default=None, type=str, help='Checkpoint state_dict file to resume training from')
-    parser.add_argument('--log_step', default=50, type=int, help='Print logs every log_step')
-    parser.add_argument('--save_step', default=5000, type=int, help='Save checkpoint every save_step')
-    parser.add_argument('--eval_step', default=5000, type=int, help='Evaluate dataset every eval_step, disabled when eval_step < 0')
-    parser.add_argument('--use_tensorboard', default=True, type=str2bool)
+    parser.add_argument('--vgg',default='vgg16_reducedfc.pth', help='Pre-trained vgg model path, download from https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth')
+    parser.add_argument('--resume', default='', type=str, help='Checkpoint state_dict file to resume training from')
+    parser.add_argument('--log_step', default=20, type=int, help='Print logs every log_step')
+    parser.add_argument('--save_step', default=1000, type=int, help='Save checkpoint every save_step')
+    parser.add_argument('--eval_step', default=1000, type=int, help='Evaluate dataset every eval_step, disabled when eval_step < 0')
+    parser.add_argument('--use_tensorboard', default=False, type=str2bool)
     parser.add_argument(
         "--skip-test",
         dest="skip_test",
@@ -101,12 +108,13 @@ def main():
     )
     args = parser.parse_args()
     num_gpus = int(os.environ["WORLD_SIZE"]) if "WORLD_SIZE" in os.environ else 1
-    args.distributed = num_gpus > 1
+    args.distributed = 0
     args.num_gpus = num_gpus
-
+    print(num_gpus)
     if torch.cuda.is_available():
         # This flag allows you to enable the inbuilt cudnn auto-tuner to
         # find the best algorithm to use for your hardware.
+       
         torch.backends.cudnn.benchmark = True
     if args.distributed:
         torch.cuda.set_device(args.local_rank)

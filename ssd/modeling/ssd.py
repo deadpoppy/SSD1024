@@ -10,11 +10,14 @@ from ssd.utils import box_utils
 
 
 class SSD(nn.Module):
-    def __init__(self, cfg,
-                 vgg: nn.ModuleList,
-                 extras: nn.ModuleList,
-                 classification_headers: nn.ModuleList,
-                 regression_headers: nn.ModuleList):
+    def __init__(self, cfg,vgg,
+                 extras,
+                 classification_headers,
+                 regression_headers):
+                 # vgg: nn.ModuleList,
+                 # extras: nn.ModuleList,
+                 # classification_headers: nn.ModuleList,
+                 # regression_headers: nn.ModuleList):
         """Compose a SSD model using the given components.
         """
         super(SSD, self).__init__()
@@ -24,7 +27,7 @@ class SSD(nn.Module):
         self.extras = extras
         self.classification_headers = classification_headers
         self.regression_headers = regression_headers
-        self.l2_norm = L2Norm(512, scale=20)
+        self.l2_norm = L2Norm(192, scale=20)
         self.criterion = MultiBoxLoss(neg_pos_ratio=cfg.MODEL.NEG_POS_RATIO)
         self.priors = None
         self.reset_parameters()
@@ -35,7 +38,7 @@ class SSD(nn.Module):
                 nn.init.xavier_uniform_(m.weight)
                 nn.init.zeros_(m.bias)
 
-        self.vgg.apply(weights_init)
+        #self.vgg.apply(weights_init)
         self.extras.apply(weights_init)
         self.classification_headers.apply(weights_init)
         self.regression_headers.apply(weights_init)
@@ -44,20 +47,23 @@ class SSD(nn.Module):
         sources = []
         confidences = []
         locations = []
-        for i in range(23):
+        for i in range(1):
             x = self.vgg[i](x)
         s = self.l2_norm(x)  # Conv4_3 L2 normalization
         sources.append(s)
 
         # apply vgg up to fc7
-        for i in range(23, len(self.vgg)):
+        for i in range(1, len(self.vgg)):
             x = self.vgg[i](x)
-        sources.append(x)
+            sources.append(x)
 
-        for k, v in enumerate(self.extras):
-            x = F.relu(v(x), inplace=True)
-            if k % 2 == 1:
-                sources.append(x)
+        # for k, v in enumerate(self.extras):
+        #     x = F.relu(v(x), inplace=True)
+        #     if k % 2 == 1:
+        #         sources.append(x)
+
+        # for aaa in sources:
+        #     print(aaa.shape)
 
         for (x, l, c) in zip(sources, self.regression_headers, self.classification_headers):
             locations.append(l(x).permute(0, 2, 3, 1).contiguous())

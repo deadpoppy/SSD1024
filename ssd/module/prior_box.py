@@ -28,29 +28,32 @@ class PriorBox(nn.Module):
         for k, f in enumerate(self.feature_maps):
             scale = self.image_size / self.strides[k]
             for i, j in product(range(f), repeat=2):
-                # unit center x,y
-                cx = (j + 0.5) / scale
-                cy = (i + 0.5) / scale
+                for n in range(len(self.min_sizes[k])):
 
-                # small sized square box
-                size = self.min_sizes[k]
-                h = w = size / self.image_size
-                priors.append([cx, cy, w, h])
+                    # unit center x,y
+                    cx = (j + 0.5) / scale
+                    cy = (i + 0.5) / scale
 
-                # big sized square box
-                size = sqrt(self.min_sizes[k] * self.max_sizes[k])
-                h = w = size / self.image_size
-                priors.append([cx, cy, w, h])
+                    # small sized square box
+                    size = self.min_sizes[k][n]
+                    h = w = size / self.image_size
+                    #priors.append([cx, cy, w, h])
 
-                # change h/w ratio of the small sized box
-                size = self.min_sizes[k]
-                h = w = size / self.image_size
-                for ratio in self.aspect_ratios[k]:
-                    ratio = sqrt(ratio)
-                    priors.append([cx, cy, w * ratio, h / ratio])
-                    priors.append([cx, cy, w / ratio, h * ratio])
+                    # big sized square box
+                    #size = sqrt(self.min_sizes[k][n] * self.max_sizes[k])
+                    #h = w = size / self.image_size
+                    #priors.append([cx, cy, w, h])
+
+                    # change h/w ratio of the small sized box
+                    size = self.min_sizes[k][n]
+                    h = w = size / self.image_size
+                    for ratio in self.aspect_ratios[k]:
+                        ratio = sqrt(ratio)
+                        priors.append([cx, cy, w * ratio, h / ratio])
+                        #priors.append([cx, cy, w / ratio, h * ratio])
 
         priors = torch.Tensor(priors)
         if self.clip:
             priors.clamp_(max=1, min=0)
+        #print(priors.shape)
         return priors

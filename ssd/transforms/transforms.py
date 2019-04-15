@@ -109,8 +109,8 @@ class Resize(object):
         self.size = size
 
     def __call__(self, image, boxes=None, labels=None):
-        image = cv2.resize(image, (self.size,
-                                   self.size))
+        image = cv2.resize(image, (1024,
+                                   1024))
         return image, boxes, labels
 
 
@@ -233,10 +233,10 @@ class RandomSampleCrop(object):
             # using entire original input image
             None,
             # sample a patch s.t. MIN jaccard w/ obj in .1,.3,.4,.7,.9
-            (0.1, None),
-            (0.3, None),
-            (0.7, None),
-            (0.9, None),
+            (0.001, None),
+            #(0.3, None),
+            #(0.7, None),
+            #(0.9, None),
             # randomly sample a patch
             (None, None),
         )
@@ -262,8 +262,8 @@ class RandomSampleCrop(object):
             for _ in range(50):
                 current_image = image
 
-                w = random.uniform(0.3 * width, width)
-                h = random.uniform(0.3 * height, height)
+                w = random.uniform(0.85 * width, width)
+                h = random.uniform(0.85 * height, height)
 
                 # aspect ratio constraint b/t .5 & 2
                 if h / w < 0.5 or h / w > 2:
